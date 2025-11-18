@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fake News Detector</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0d1117;
+      color: #e6f1ff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      transition: background 0.4s, color 0.4s;
+    }
+    body.light-mode {
+      background-color: #f5f6fa;
+      color: #333;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .section {
+      width: 90%;
+      max-width: 600px;
+      background-color: #161b22;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #00bfff50;
+      margin-bottom: 1.5rem;
+      transition: background 0.4s;
+    }
+    body.light-mode .section {
+      background-color: #fff;
+      box-shadow: 0 0 15px #ddd;
+    }
+    h1, .result-card h2 {
+      color: #00bfff;
+    }
+    body.light-mode h1, body.light-mode .result-card h2 {
+      color: #0077c2;
+    }
+    .subtitle {
+      color: #9fbcd4;
+      font-size: 1.1rem;
+    }
+    body.light-mode .subtitle {
+      color: #666;
+    }
+    label {
+      font-weight: 600;
+      color: #9cc9ff;
+      display: block;
+      margin-top: 1rem;
+    }
+    body.light-mode label {
+      color: #0077c2;
+    }
+    textarea, input[type="file"], input[type="text"], input[type="password"] {
+      width: 100%;
+      border: 1px solid #00bfff;
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      background: #0d1117;
+      color: #e6f1ff;
+      resize: none;
+      box-sizing: border-box;
+      transition: background 0.4s, color 0.4s, border 0.4s;
+    }
+    body.light-mode textarea, body.light-mode input, body.light-mode input[type="file"] {
+      background: #f5f6fa;
+      color: #333;
+      border: 1px solid #0077c2;
+    }
+    .top-nav {
+      position: fixed;
+      top: 16px;
+      right: 24px;
+      z-index: 102;
+      display: flex;
+      gap: 12px;
+    }
+    .hamburger {
+      width: 36px;
+      height: 36px;
+      background: none;
+      border: none;
+      font-size: 2rem;
+      color: #00bfff;
+      cursor: pointer;
+      display: none;
+      z-index: 101;
+    }
+    body.light-mode .hamburger {
+      color: #0077c2;
+    }
+    .mode-toggle {
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      color: #00bfff;
+      cursor: pointer;
+      z-index: 101;
+    }
+    body.light-mode .mode-toggle {
+      color: #0077c2;
+    }
+    #sidebar {
+      position: fixed;
+      top: 0; right: 0;
+      width: 230px;
+      height: 100vh;
+      background: #161b22;
+      box-shadow: -2px 0 12px #0003;
+      padding-top: 64px;
+      display: none;
+      flex-direction: column;
+      z-index: 100;
+      transition: background 0.4s;
+    }
+    body.light-mode #sidebar {
+      background: #fff;
+      box-shadow: -2px 0 12px #aaa2;
+    }
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #sidebar ul li {
+      padding: 20px;
+      border-bottom: 1px solid #222;
+      color: #9cc9ff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #sidebar ul li:last-child {
+      border: none;
+    }
+    #sidebar ul li:hover {
+      background: #222d;
+    }
+    body.light-mode #sidebar ul li {
+      color: #0077c2;
+      border-bottom: 1px solid #eee;
+    }
+    body.light-mode #sidebar ul li:hover {
+      background: #e7f3ff;
+    }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      z-index: 99;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.45);
+    }
+    .result-card {
+      text-align: center;
+    }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #9fbcd4;
+      font-size: 0.9rem;
+      border-top: 1px solid #00bfff30;
+      margin-top: auto;
+    }
+    body.light-mode footer {
+      color: #666;
+      border-top: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-nav">
+    <button class="mode-toggle" id="modeToggle" title="Toggle Light/Dark">🌙</button>
+    <button class="hamburger" id="hamburger">&#9776;</button>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav id="sidebar">
+    <ul>
+      <li id="dashboardBtn">Dashboard</li>
+      <li id="profileBtn">Profile</li>
+      <li id="settingsBtn">Settings</li>
+      <li id="logoutBtn">Logout</li>
+    </ul>
+  </nav>
+  <div class="container">
+    <!-- LOGIN SECTION -->
+    <section id="login-section" class="section">
+      <h1>Login</h1>
+      <label for="username">Username:</label>
+      <input type="text" id="username" placeholder="Enter username" />
+      <label for="password">Password:</label>
+      <input type="password" id="password" placeholder="Enter password" />
+      <button id="loginBtn">Login</button>
+      <p id="loginMsg" style="color: #ff6655; text-align:center;"></p>
+    </section>
+    <!-- MAIN DETECTOR SECTION -->
+    <header id="main-header" style="display:none;">
+      <h1>Fake News Detector</h1>
+      <p class="subtitle">AI-powered truth verification system</p>
+    </header>
+    <section id="input-section" class="section" style="display:none;">
+      <label for="textInput">Enter News Text:</label>
+      <textarea id="textInput" rows="4" placeholder="Type or paste the news here..."></textarea>
+      <label for="imageInput">Upload Related Image (optional):</label>
+      <input type="file" id="imageInput" accept="image/*" />
+      <button id="submit-btn">Analyze News</button>
+    </section>
+    <section id="result-section" class="section" style="display:none;">
+      <div class="result-card">
+        <h2>Analysis Results</h2>
+        <p id="textResult"></p>
+        <p id="imageResult"></p>
+      </div>
+      <button id="back-btn">Try Another</button>
+    </section>
+  </div>
+  <footer>
+    <p>Developed with ❤️ using DeBERTa + CLIP | 2025</p>
+  </footer>
+  <script>
+    // LOGIN LOGIC
+    const loginBtn = document.getElementById("loginBtn");
+    const loginSection = document.getElementById("login-section");
+    const mainHeader = document.getElementById("main-header");
+    const inputSection = document.getElementById("input-section");
+    const resultSection = document.getElementById("result-section");
+    const loginMsg = document.getElementById("loginMsg");
+    loginBtn.addEventListener("click",() => {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      if(username && password) {
+        // Dummy auth: hardcoded user "user", password "1234"
+        if(username==="user" && password==="1234") {
+          loginSection.style.display="none";
+          mainHeader.style.display="";
+          inputSection.style.display="";
+          document.getElementById('hamburger').style.display = "block";
+        } else {
+          loginMsg.textContent="Invalid credentials! Try user/1234";
+        }
+      } else {
+        loginMsg.textContent="Please enter username and password";
+      }
+    });
+
+    // FAKE NEWS DETECTOR LOGIC
+    const submitBtn = document.getElementById("submit-btn");
+    const backBtn = document.getElementById("back-btn");
+    const textResult = document.getElementById("textResult");
+    const imageResult = document.getElementById("imageResult");
+
+    submitBtn.addEventListener("click", async () => {
+      const textInput = document.getElementById("textInput").value;
+      const imageFile = document.getElementById("imageInput").files[0];
+
+      if (!textInput.trim()) {
+        alert("Please enter news text.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("text", textInput);
+      if (imageFile) formData.append("image", imageFile);
+
+      inputSection.style.display = "none";
+      resultSection.style.display = "block";
+      textResult.textContent = "Analyzing... ⏳";
+      imageResult.textContent = "";
+
+      try {
+        const response = await fetch("/analyze", {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+        textResult.textContent = `🧠 Text Model: ${data.text_label} (${data.text_confidence}% confidence)`;
+        if (data.similarity !== null) {
+          const match = data.similarity > 0.3 ? "Consistent" : "Inconsistent";
+          imageResult.textContent = `🖼 Image-Caption Similarity: ${data.similarity} (${match})`;
+        } else {
+          imageResult.textContent = "🖼 No image uploaded.";
+        }
+        const finalScoreP = document.createElement("p");
+        finalScoreP.textContent = `⭐ Final Combined Score: ${data.final_score}%`;
+        finalScoreP.style.fontWeight = "600";
+        finalScoreP.style.color = "#00ff99";
+        resultSection.querySelector(".result-card").appendChild(finalScoreP);
+      } catch (err) {
+        console.error(err);
+        textResult.textContent = "⚠ Error analyzing news.";
+        imageResult.textContent = "";
+      }
+    });
+
+    backBtn.addEventListener("click", () => {
+      inputSection.style.display = "block";
+      resultSection.style.display = "none";
+      const finalScoreP = resultSection.querySelector(".result-card p:last-child");
+      if(finalScoreP && finalScoreP.textContent.startsWith("⭐ Final Combined Score")) {
+        finalScoreP.remove();
+      }
+    });
+
+    // HAMBURGER AND SIDEBAR LOGIC
+    const hamburger = document.getElementById("hamburger");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    hamburger.addEventListener("click",() => {
+      sidebar.style.display = "flex";
+      sidebarOverlay.style.display = "block";
+    });
+    sidebarOverlay.addEventListener("click",() => {
+      sidebar.style.display = "none";
+      sidebarOverlay.style.display = "none";
+    });
+
+    // Example sidebar buttons:
+    document.getElementById("dashboardBtn").onclick = () => alert("Go to Dashboard (demo)");
+    document.getElementById("profileBtn").onclick = () => alert("View Profile (demo)");
+    document.getElementById("settingsBtn").onclick = () => alert("Open Settings (demo)");
+    document.getElementById("logoutBtn").onclick = () => {
+      sidebar.style.display="none";
+      sidebarOverlay.style.display="none";
+      mainHeader.style.display="none";
+      inputSection.style.display="none";
+      resultSection.style.display="none";
+      loginSection.style.display="";
+      document.getElementById('hamburger').style.display="none";
+    };
+
+    // LIGHT/DARK MODE LOGIC
+    const modeToggle=document.getElementById("modeToggle");
+    let lightMode=false;
+    modeToggle.addEventListener("click", () => {
+      lightMode=!lightMode;
+      document.body.classList.toggle("light-mode",lightMode);
+      modeToggle.textContent=lightMode?"🌞":"🌙";
+    });
+  </script>
+</body>
+</html>
